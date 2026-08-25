@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0-beta+120100] - 2026-08-25
+
+### Changed
+
+* TOC: updated the interface version to `120100` for WoW 12.1 retail.
+* Quest Info: use `Enum.QuestClassification.Legendary` and `C_QuestLog.IsRepeatableQuest` directly instead of the APIs removed in WoW 12.0.
+
+### Fixed
+
+* World Map: only install secure hooks when the corresponding Blizzard mixin and method are available. This prevents addon initialization errors when 12.1's refactored load-on-demand UI has not created an optional pin mixin.
+
 ## [0.10.3-beta+120005] - 2026-04-30
 
 ### Changed

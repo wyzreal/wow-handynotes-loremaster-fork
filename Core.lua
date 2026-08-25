@@ -951,10 +951,9 @@ function LocalQuestUtils:GetQuestInfo(questID, targetType, pinMapID)
             isOnQuest = C_QuestLog.IsOnQuest(questID),
             isImportant = C_QuestLog.IsImportantQuest(questID),
             -- isInvasion = C_QuestLog.IsQuestInvasion(questID),
-            isLegendary = C_QuestLog.IsLegendaryQuest and C_QuestLog.IsLegendaryQuest(questID),
+            isLegendary = C_QuestInfoSystem.GetQuestClassification(questID) == Enum.QuestClassification.Legendary,
             isObsolete = LocalQuestFilter:IsObsolete(questID),
-            -- isRepeatable = C_QuestLog.IsRepeatableQuest(questID),
-            isRepeatable = C_QuestLog.IsRepeatableQuest and C_QuestLog.IsRepeatableQuest(questID),
+            isRepeatable = C_QuestLog.IsRepeatableQuest(questID),
             -- isReplayable = C_QuestLog.IsQuestReplayable(questID),
             isSequenced = IsQuestSequenced(questID),
             isStory = LocalQuestFilter:IsStory(questID),
@@ -994,8 +993,7 @@ function LocalQuestUtils:GetQuestInfo(questID, targetType, pinMapID)
             isCalling = C_QuestLog.IsQuestCalling(questID),
             isDisabledForSession = C_QuestLog.IsQuestDisabledForSession(questID),
             -- isInvasion = C_QuestLog.IsQuestInvasion(questID),
-            -- isRepeatable = C_QuestLog.IsRepeatableQuest(questID),
-            isRepeatable = C_QuestLog.IsRepeatableQuest and C_QuestLog.IsRepeatableQuest(questID),
+            isRepeatable = C_QuestLog.IsRepeatableQuest(questID),
             isReplayable = C_QuestLog.IsQuestReplayable(questID),
             isReplayedRecently = C_QuestLog.IsQuestReplayedRecently(questID),
             -- Keep
@@ -1005,7 +1003,7 @@ function LocalQuestUtils:GetQuestInfo(questID, targetType, pinMapID)
             isDaily = LocalQuestFilter:IsDaily(questID),
             isFlaggedCompleted = C_QuestLog.IsQuestFlaggedCompleted(questID),  -- self:IsQuestCompletedByAnyone(questInfo),
             isImportant = C_QuestLog.IsImportantQuest(questID),
-            isLegendary = C_QuestLog.IsLegendaryQuest and C_QuestLog.IsLegendaryQuest(questID),
+            isLegendary = C_QuestInfoSystem.GetQuestClassification(questID) == Enum.QuestClassification.Legendary,
             isOnQuest = C_QuestLog.IsOnQuest(questID),
             isReadyForTurnIn = C_QuestLog.ReadyForTurnIn(questID),
             isStory = LocalQuestFilter:IsStory(questID),
@@ -1951,26 +1949,32 @@ function LoremasterPlugin:OnHandyNotesStateChanged()
 end
 
 function LoremasterPlugin:RegisterHooks()
+    local function HookMixin(mixin, method, callback)
+        if mixin and type(mixin[method]) == "function" then
+            hooksecurefunc(mixin, method, callback)
+        end
+    end
+
     -- Hooking active/ongoing quests
-    hooksecurefunc(QuestPinMixin, "OnMouseEnter", Hook_ActiveQuestPin_OnEnter)
-    hooksecurefunc(QuestPinMixin, "OnMouseLeave", Hook_QuestPin_OnLeave)
+    HookMixin(QuestPinMixin, "OnMouseEnter", Hook_ActiveQuestPin_OnEnter)
+    HookMixin(QuestPinMixin, "OnMouseLeave", Hook_QuestPin_OnLeave)
     -- hooksecurefunc(QuestPinMixin, "OnClick", Hook_QuestPin_OnClick)
 
     -- Hooking storyline quests
     --> Note: "StorylineQuestPinMixin" has been removed in 11.0.0 from the game.
-    hooksecurefunc(QuestOfferPinMixin, "OnMouseEnter", Hook_StorylineQuestPin_OnEnter)
-    hooksecurefunc(QuestOfferPinMixin, "OnMouseLeave", Hook_QuestPin_OnLeave)
-    hooksecurefunc(QuestOfferPinMixin, "OnClick", Hook_QuestPin_OnClick)
+    HookMixin(QuestOfferPinMixin, "OnMouseEnter", Hook_StorylineQuestPin_OnEnter)
+    HookMixin(QuestOfferPinMixin, "OnMouseLeave", Hook_QuestPin_OnLeave)
+    HookMixin(QuestOfferPinMixin, "OnClick", Hook_QuestPin_OnClick)
 
     -- Hooking threat-, bonus-, and world quests
-    hooksecurefunc(ThreatObjectivePinMixin, "OnMouseEnter", Hook_WorldQuestsPin_OnEnter)  -- Hook_StorylineQuestPin_OnEnter)
-    hooksecurefunc(ThreatObjectivePinMixin, "OnMouseLeave", Hook_QuestPin_OnLeave)
+    HookMixin(ThreatObjectivePinMixin, "OnMouseEnter", Hook_WorldQuestsPin_OnEnter)  -- Hook_StorylineQuestPin_OnEnter)
+    HookMixin(ThreatObjectivePinMixin, "OnMouseLeave", Hook_QuestPin_OnLeave)
 
-    hooksecurefunc(BonusObjectivePinMixin, "OnMouseEnter", Hook_WorldQuestsPin_OnEnter)
-    hooksecurefunc(BonusObjectivePinMixin, "OnMouseLeave", Hook_QuestPin_OnLeave)
+    HookMixin(BonusObjectivePinMixin, "OnMouseEnter", Hook_WorldQuestsPin_OnEnter)
+    HookMixin(BonusObjectivePinMixin, "OnMouseLeave", Hook_QuestPin_OnLeave)
 
-    hooksecurefunc(WorldMap_WorldQuestPinMixin, "OnMouseEnter", Hook_WorldQuestsPin_OnEnter)  -- Hook_StorylineQuestPin_OnEnter)
-    hooksecurefunc(WorldMap_WorldQuestPinMixin, "OnMouseLeave", Hook_QuestPin_OnLeave)
+    HookMixin(WorldMap_WorldQuestPinMixin, "OnMouseEnter", Hook_WorldQuestsPin_OnEnter)  -- Hook_StorylineQuestPin_OnEnter)
+    HookMixin(WorldMap_WorldQuestPinMixin, "OnMouseLeave", Hook_QuestPin_OnLeave)
 
     -- HandyNotes Hooks
     --> Callback types: <https://www.wowace.com/projects/ace3/pages/ace-db-3-0-tutorial#title-5>
@@ -1982,7 +1986,7 @@ function LoremasterPlugin:RegisterHooks()
     hooksecurefunc(HandyNotes, "OnDisable", self.OnHandyNotesStateChanged)
 
     -- Keep track of World Map size changes, ie. to adjust icon scale, tooltips position, etc.
-    hooksecurefunc(WorldMapFrame, "OnFrameSizeChanged", Hook_WorldMap_OnFrameSizeChanged)
+    HookMixin(WorldMapFrame, "OnFrameSizeChanged", Hook_WorldMap_OnFrameSizeChanged)
 end
 
 ----- Ace3 event handler
